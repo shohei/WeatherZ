@@ -15,7 +15,6 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
 import com.squareup.okhttp.OkHttpClient;
@@ -29,8 +28,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 
 
@@ -88,11 +85,11 @@ public class MainActivity extends Activity {
     }
 
     protected void parseJSON(String jsonString) {
-//        List<HashMap<String,String>> items = new ArrayList<>();
         ArrayList<Weather> weathers = new ArrayList<Weather>();
         String wDt;
         String wDesc;
         String wMain;
+        String wIcon;
         try {
             JSONArray jsonArray = new JSONArray(new JSONObject(jsonString).get("list").toString());
             for (int i = 0; i < jsonArray.length(); i++) {
@@ -102,19 +99,18 @@ public class MainActivity extends Activity {
                 SimpleDateFormat sdf = new SimpleDateFormat("E yyyy/MM/dd", Locale.ENGLISH);
                 wDt = sdf.format(date);
                 try {
-//                    HashMap<String,String> map = new HashMap<>();
                     JSONArray subWeatherJSONArray = new JSONArray(weatherJSON.get("weather").toString());
                     wMain = subWeatherJSONArray.getJSONObject(0).get("main").toString();
                     wDesc = subWeatherJSONArray.getJSONObject(0).get("description").toString();
+                    wIcon = subWeatherJSONArray.getJSONObject(0).get("icon").toString();
                     Weather weather = new Weather();
-                    weather.setImage(BitmapFactory.decodeResource(getResources(),R.mipmap.ic_launcher));
+                    int resId = getResources().getIdentifier("a"+wIcon, "drawable", getPackageName());
+                    weather.setImage(BitmapFactory.decodeResource(getResources(),resId));
+
                     weather.setDesc(wDesc);
                     weather.setDate(wDt);
+                    weather.setIcon(wIcon);
                     weathers.add(weather);
-//                    map.put("date",wDt);
-//                    map.put("weather",wMain);
-//                    map.put("description", wDesc);
-//                    items.add(map);
                 } catch (Throwable t) {
                     Log.e("My App", "Could not parse malformed JSON: \"" + weatherJSON.get("weather").toString() + "\"");
                 }
@@ -144,12 +140,12 @@ public class MainActivity extends Activity {
                 convertView = layoutInflater.inflate(R.layout.row,null);
             }
             Weather weather = getItem(position);
-            ImageView wImage = (ImageView) convertView.findViewById(R.id.wImageView);
-            TextView  wDesc = (TextView) convertView.findViewById(R.id.descText);
-            TextView wDt = (TextView) convertView.findViewById(R.id.dateText);
-            wImage.setImageBitmap(weather.getImage());
-            wDesc.setText(weather.getDesc());
-            wDt.setText(weather.getDate());
+            ImageView wImageView = (ImageView) convertView.findViewById(R.id.wImageView);
+            TextView  wDescView = (TextView) convertView.findViewById(R.id.descText);
+            TextView wDtView = (TextView) convertView.findViewById(R.id.dateText);
+            wImageView.setImageBitmap(weather.getImage());
+            wDescView.setText(weather.getDesc());
+            wDtView.setText(weather.getDate());
 
             return convertView;
         }
@@ -159,6 +155,7 @@ public class MainActivity extends Activity {
         private Bitmap image;
         private String desc;
         private String date;
+        private String icon;
 
         public Bitmap getImage(){
             return this.image;
@@ -184,8 +181,14 @@ public class MainActivity extends Activity {
             this.date = date;
         }
 
+        public String getIcon(){
+            return this.icon;
+        }
 
-
+        public void setIcon(String icon){
+            this.icon = icon;
+        }
     }
 
 }
+
