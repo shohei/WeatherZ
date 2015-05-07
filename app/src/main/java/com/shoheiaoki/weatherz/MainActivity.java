@@ -1,14 +1,22 @@
 package com.shoheiaoki.weatherz;
 
 import android.app.Activity;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -80,12 +88,13 @@ public class MainActivity extends Activity {
     }
 
     protected void parseJSON(String jsonString) {
-        List<HashMap<String,String>> items = new ArrayList<>();
+//        List<HashMap<String,String>> items = new ArrayList<>();
+        ArrayList<Weather> weathers = new ArrayList<Weather>();
         String wDt;
+        String wDesc;
+        String wMain;
         try {
             JSONArray jsonArray = new JSONArray(new JSONObject(jsonString).get("list").toString());
-            String wMain;
-            String wDesc=null;
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject weatherJSON = jsonArray.getJSONObject(i);
                 long unix_dt = Long.parseLong(weatherJSON.get("dt").toString());
@@ -93,32 +102,90 @@ public class MainActivity extends Activity {
                 SimpleDateFormat sdf = new SimpleDateFormat("E yyyy/MM/dd", Locale.ENGLISH);
                 wDt = sdf.format(date);
                 try {
-                    HashMap<String,String> map = new HashMap<>();
+//                    HashMap<String,String> map = new HashMap<>();
                     JSONArray subWeatherJSONArray = new JSONArray(weatherJSON.get("weather").toString());
                     wMain = subWeatherJSONArray.getJSONObject(0).get("main").toString();
                     wDesc = subWeatherJSONArray.getJSONObject(0).get("description").toString();
-                    map.put("date",wDt);
-                    map.put("weather",wMain);
-                    map.put("description",wDesc);
-                    items.add(map);
+                    Weather weather = new Weather();
+                    weather.setImage(BitmapFactory.decodeResource(getResources(),R.mipmap.ic_launcher));
+                    weather.setDesc(wDesc);
+                    weather.setDate(wDt);
+                    weathers.add(weather);
+//                    map.put("date",wDt);
+//                    map.put("weather",wMain);
+//                    map.put("description", wDesc);
+//                    items.add(map);
                 } catch (Throwable t) {
                     Log.e("My App", "Could not parse malformed JSON: \"" + weatherJSON.get("weather").toString() + "\"");
                 }
             }
 
-            setListView(items);
+            setListView(weathers);
 
         } catch (Throwable t) {
             Log.e("My App", "Could not parse malformed JSON: \"" + jsonString + "\"");
         }
     }
 
-    protected void setListView(List<HashMap<String,String>> items) {
-//        Log.v("hoge",items.toString());
-        String[] from = {"description","date"};
-        int[] to = {android.R.id.text1,android.R.id.text2};
-        SimpleAdapter adapter = new SimpleAdapter(MainActivity.this, items,android.R.layout.simple_list_item_2, from,to);
+    protected void setListView(ArrayList<Weather> weathers) {
+        WeatherAdapter adapter = new WeatherAdapter(this,0,weathers);
         wListView.setAdapter(adapter);
+    }
+
+    public class WeatherAdapter extends ArrayAdapter<Weather> {
+        LayoutInflater layoutInflater;
+        public WeatherAdapter(Context context, int viewResourceId, ArrayList<Weather> weathers) {
+            super(context,viewResourceId,weathers);
+            this.layoutInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        }
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent){
+            if(convertView==null){
+                convertView = layoutInflater.inflate(R.layout.row,null);
+            }
+            Weather weather = getItem(position);
+            ImageView wImage = (ImageView) convertView.findViewById(R.id.wImageView);
+            TextView  wDesc = (TextView) convertView.findViewById(R.id.descText);
+            TextView wDt = (TextView) convertView.findViewById(R.id.dateText);
+            wImage.setImageBitmap(weather.getImage());
+            wDesc.setText(weather.getDesc());
+            wDt.setText(weather.getDate());
+
+            return convertView;
+        }
+    }
+
+    public class Weather {
+        private Bitmap image;
+        private String desc;
+        private String date;
+
+        public Bitmap getImage(){
+            return this.image;
+        }
+
+        public void setImage(Bitmap image){
+            this.image = image;
+        }
+
+        public String getDesc(){
+            return this.desc;
+        }
+
+        public void setDesc(String desc){
+            this.desc = desc;
+        }
+
+        public String getDate(){
+            return this.date;
+        }
+
+        public void setDate(String date){
+            this.date = date;
+        }
+
+
+
     }
 
 }
